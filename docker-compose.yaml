@@ -1,0 +1,64 @@
+version: '3'
+
+services:
+  nginx:
+    container_name:  lamp-nginx
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /apps/nginx/log:/var/log/nginx
+      - /apps/nginx/config:/etc/nginx/conf.d:ro
+      - /apps/www/default.me:/apps/www/default.me:ro,bind
+    depends_on:
+      - php
+      - mariadb
+    networks:
+      - lamp-network
+
+  php:
+    container_name: lamp-php72
+    #image: php:7.2-fpm-alpine
+    build:
+      dockerfile: files/dockerfile/lamp-php-fpm-ext
+    networks:
+      lamp-network:
+    volumes:
+      - /apps/www/default.me:/apps/www/default.me
+
+  mariadb:
+    container_name: lamp-mariadb
+    image: mariadb:10.7.8
+    networks:
+      lamp-network:
+    volumes:
+      - lamp_mariadb_data:/var/lib/mysql
+    environment:
+      - MARIADB_ROOT_PASSWORD=c470d5b6
+
+  redis:
+    container_name: lamp-redis
+    image: redis:latest
+    networks:
+      lamp-network:
+
+  phpmyadmin:
+    container_name: lamp-phpmyadmin
+    image: phpmyadmin:latest
+    networks:
+      lamp-network:
+    environment:
+      #PMA_ARBITRARY: "1"
+      PMA_HOST: lamp-mariadb
+      PMA_PORT: "3306"
+    ports:
+      - "8080:80"
+
+
+networks:
+  lamp-network:
+
+volumes:
+  lamp_mariadb_data:
+
